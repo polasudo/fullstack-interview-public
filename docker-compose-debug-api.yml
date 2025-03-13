@@ -1,0 +1,13 @@
+services:
+  api:
+    image: qoomon/docker-host:3.1.2
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: on-failure
+    environment:
+      - PORTS=8000:8888
+    build: {}
+    volumes: !reset []
+    depends_on: !reset []
+    command: ""
