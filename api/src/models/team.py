@@ -13,8 +13,9 @@ class Team(Base):
     id = Column(String, primary_key=True, default=str(uuid.uuid4))
     name = Column(String, nullable=False)
     parent_team_id = Column(String, ForeignKey("team.id"), nullable=True)
-    parent_team = relationship("Team", foreign_keys=[parent_team_id], remote_side=[id])
-    children = relationship("Team", backref="parent", remote_side=[parent_team_id])
+    
+    # Define the parent relationship (many-to-one)
+    parent = relationship("Team", remote_side=[id], backref="children", foreign_keys=[parent_team_id])
 
 
 class TeamService:
