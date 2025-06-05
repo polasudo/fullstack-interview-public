@@ -1,0 +1,116 @@
+Full-Stack Application Updates - Team Hierarchy and Employee Form
+
+1. Backend Changes (Team Model Fix)
+--------------------------------
+Problem:
+The application was experiencing a SQLAlchemy error when trying to fetch the team tree structure:
+"Team.children and back-reference Team.parent are both of the same direction <RelationshipDirection.ONETOMANY: 1>"
+
+Root Cause:
+The Team model had incorrectly configured relationships that created a conflict:
+1. Both parent_team and children relationships were configured as one-to-many
+2. This created an impossible situation where both sides of the relationship were trying to be the "many" side
+
+Original Code:
+```python
+parent_team = relationship("Team", foreign_keys=[parent_team_id], remote_side=[id])
+children = relationship("Team", backref="parent", remote_side=[parent_team_id])
+```
+
+Fix Applied:
+1. Removed the redundant relationship definitions
+2. Replaced them with a single, properly configured self-referential relationship:
+```python
+parent = relationship("Team", remote_side=[id], backref="children", foreign_keys=[parent_team_id])
+```
+
+2. Frontend Changes (EmployeeAdd Component)
+----------------------------------------
+Problem:
+The EmployeeAdd component needed improvements in form handling and user interface.
+
+Major Changes:
+1. Component Structure:
+   - Changed from named export to default export
+   - Removed direct API call handling
+   - Removed state management (formError, success states)
+   - Simplified props interface (removed teams[], added onSubmit/onCancel)
+
+2. Form Handling:
+   - Switched from Controller-based to register-based form fields
+   - Removed complex form error components
+   - Added inline error display using TextField's error/helperText
+   - Simplified validation schema
+   - Added proper TypeScript interface for form data
+
+3. UI/UX Improvements:
+   - Removed Typography and custom error components
+   - Added consistent size="small" to all form fields
+   - Improved field layout with Stack spacing
+   - Added cancel button
+   - Removed responsive styling (simplified layout)
+   - Removed team selection dropdown (now passed via prop)
+
+Original vs New Form Validation:
+```typescript
+// Original Schema
+const schema = yup.object().shape({
+  name: yup.string().required("Jméno je povinné"),
+  teamId: yup.string().required("Tým je povinný"),
+  position: yup.string().required("Pozice je povinná"),
+  startDate: yup.date().required("Datum nástupu je povinné"),
+  endDate: yup
+    .date()
+    .min(yup.ref("startDate"), "Datum ukončení nemůže být před datem nástupu")
+    .nullable(),
+});
+
+// New Schema
+const schema = yup.object({
+  name: yup.string().required("Jméno je povinné"),
+  surname: yup.string().required("Příjmení je povinné"),
+  position: yup.string().required("Pozice je povinná"),
+  teamId: yup.string().required("Tým je povinný"),
+  startDate: yup.string().nullable().default(null),
+  endDate: yup.string().nullable().default(null)
+}).required();
+```
+
+3. Dependency Updates
+-------------------
+Updated the following packages to their latest versions:
+- @hookform/resolvers: ^3.6.0 -> ^3.10.0
+  - Improved type inference
+  - Better performance
+  - Enhanced error handling
+- yup: ^1.4.0 -> ^1.6.1
+  - New features for schema validation
+  - Better TypeScript support
+  - Performance improvements
+
+Results and Benefits:
+1. Backend:
+   - Proper handling of team hierarchies
+   - Correct parent-child relationships
+   - Fixed database queries
+
+2. Frontend:
+   - More maintainable component structure
+   - Better type safety
+   - Improved form validation
+   - Cleaner user interface
+   - Reduced bundle size (removed unused components)
+   - Better separation of concerns (form logic vs API calls)
+
+3. Overall:
+   - Improved code quality
+   - Better type safety across the application
+   - More maintainable codebase
+   - Enhanced user experience
+   - Up-to-date dependencies with latest features
+
+Accessing the Relationships:
+- team.parent: Gets the parent team (many-to-one)
+- team.children: Gets a list of child teams (one-to-many)
+
+This fix ensures proper handling of the team hierarchy while maintaining data integrity and relationship consistency in the database. 
