@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/*' // Backend běží na portu 80
+        destination: 'http://api:8000/:path*' // Použijeme název služby z docker-compose
       }
     ]
   }
