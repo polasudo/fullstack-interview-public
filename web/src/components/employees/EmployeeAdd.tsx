@@ -3,6 +3,7 @@ import {
   Box,
   FormControl,
   InputLabel,
+  MenuItem,
   Select,
   Stack,
   TextField,
@@ -15,23 +16,26 @@ import * as yup from "yup";
 import { FormFieldError } from "../forms/FormFieldError";
 import { FormError } from "../forms/FormError";
 import { FormSuccess } from "../forms/FormSuccess";
+import type { Team, EmployeeCreate } from "@/types";
 
 const schema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  surname: yup.string().required("Surname is required"),
-  team: yup.string(),
-  position: yup.string(),
-  startDate: yup.date(),
+  name: yup.string().required("Jméno je povinné"),
+  surname: yup.string().required("Příjmení je povinné"),
+  teamId: yup.string().required("Tým je povinný"),
+  position: yup.string().required("Pozice je povinná"),
+  startDate: yup.date().required("Datum nástupu je povinné"),
   endDate: yup
     .date()
-    .min(yup.ref("startDate"), "End date can't be before start date"),
+    .min(yup.ref("startDate"), "Datum ukončení nemůže být před datem nástupu")
+    .nullable(),
 });
 
-export const EmployeeAdd = (
-  {
-    /* teams */
-  }
-) => {
+interface EmployeeAddProps {
+  teams: Team[];
+  onSuccess?: () => void;
+}
+
+export const EmployeeAdd = ({ teams, onSuccess }: EmployeeAddProps) => {
   const [formError, setFormError] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -40,16 +44,36 @@ export const EmployeeAdd = (
     reset,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: yupResolver(schema) });
+  } = useForm<EmployeeCreate>({ resolver: yupResolver(schema) });
 
-  const onSubmit = handleSubmit((formData) => {
-    console.log(formData);
+  const onSubmit = handleSubmit(async (formData) => {
+    try {
+      const response = await fetch("/api/employees", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Chyba při vytváření zaměstnance");
+      }
+
+      setSuccess(true);
+      reset();
+      onSuccess?.();
+      setTimeout(() => setSuccess(false), 2000);
+    } catch (e) {
+      setFormError(true);
+      setTimeout(() => setFormError(false), 2000);
+    }
   });
 
   return (
     <Box>
       <Typography variant="h4" mb={3}>
-        Add employee
+        Přidat zaměstnance
       </Typography>
       <form onSubmit={onSubmit}>
         <Stack direction="row" gap={3}>
@@ -59,10 +83,9 @@ export const EmployeeAdd = (
               defaultValue=""
               control={control}
               render={({ field }) => (
-                <TextField fullWidth {...field} label="Name" />
+                <TextField fullWidth {...field} label="Jméno" />
               )}
             />
-
             {errors.name && <FormFieldError text={errors.name.message} />}
           </Box>
           <Box sx={{ flex: { xs: "0 0 100%", md: "0 1 50%" } }}>
@@ -72,60 +95,51 @@ export const EmployeeAdd = (
                 defaultValue=""
                 control={control}
                 render={({ field }) => (
-                  <TextField fullWidth {...field} label="Last Name" />
+                  <TextField fullWidth {...field} label="Příjmení" />
                 )}
               />
             </FormControl>
-
             {errors.surname && <FormFieldError text={errors.surname.message} />}
           </Box>
         </Stack>
+
         <FormControl fullWidth sx={{ mt: 3 }}>
-          <InputLabel>Team</InputLabel>
+          <InputLabel>Tým</InputLabel>
           <Controller
-            name="team"
+            name="teamId"
             defaultValue=""
             control={control}
             render={({ field }) => (
-              <Select {...field} label="Team">
-                {/*                 {teams.map((team) => (
+              <Select {...field} label="Tým">
+                {teams.map((team) => (
                   <MenuItem key={team.id} value={team.id}>
                     {team.name}
                   </MenuItem>
-                ))} */}
+                ))}
               </Select>
             )}
           />
         </FormControl>
+        {errors.teamId && <FormFieldError text={errors.teamId.message} />}
 
-        {errors.team && <FormFieldError text={errors.team.message} />}
-
-        <Stack
-          direction="row"
-          gap={3}
-          mt={3}
-          flexWrap={{ xs: "wrap", md: "nowrap" }}
-        >
+        <Stack direction="row" gap={3} mt={3} flexWrap={{ xs: "wrap", md: "nowrap" }}>
           <Box sx={{ flex: { xs: "0 0 100%", md: "0 1 50%" } }}>
-            <InputLabel>Start Date </InputLabel>
+            <InputLabel>Datum nástupu</InputLabel>
             <Controller
-              defaultValue={undefined}
               name="startDate"
+              defaultValue=""
               control={control}
               render={({ field }) => (
                 <TextField fullWidth type="date" {...field} />
               )}
             />
-
-            {errors.startDate && (
-              <FormFieldError text={errors.startDate.message} />
-            )}
+            {errors.startDate && <FormFieldError text={errors.startDate.message} />}
           </Box>
           <Box sx={{ flex: { xs: "0 0 100%", md: "0 1 50%" } }}>
-            <InputLabel>End Date </InputLabel>
+            <InputLabel>Datum ukončení</InputLabel>
             <Controller
-              defaultValue={undefined}
               name="endDate"
+              defaultValue=""
               control={control}
               render={({ field }) => (
                 <TextField fullWidth type="date" {...field} />
@@ -134,24 +148,24 @@ export const EmployeeAdd = (
             {errors.endDate && <FormFieldError text={errors.endDate.message} />}
           </Box>
         </Stack>
+
         <Box mt={3}>
           <Controller
-            defaultValue=""
             name="position"
+            defaultValue=""
             control={control}
-            rules={{ required: true }}
             render={({ field }) => (
-              <TextField fullWidth {...field} label="Position" />
+              <TextField fullWidth {...field} label="Pozice" />
             )}
           />
           {errors.position && <FormFieldError text={errors.position.message} />}
         </Box>
 
         <Button type="submit" variant="contained" sx={{ my: 3 }}>
-          Add employee
+          Přidat zaměstnance
         </Button>
-        {formError && <FormError text="Please fill out the form correctly" />}
-        {success && <FormSuccess text="Employee Added" />}
+        {formError && <FormError text="Chyba při vytváření zaměstnance" />}
+        {success && <FormSuccess text="Zaměstnanec byl úspěšně vytvořen" />}
       </form>
     </Box>
   );

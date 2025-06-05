@@ -1,5 +1,4 @@
 import { Controller, useForm } from "react-hook-form";
-import AddIcon from "@mui/icons-material/Add";
 import {
   FormControl,
   InputLabel,
@@ -16,17 +15,19 @@ import * as yup from "yup";
 import { FormFieldError } from "../forms/FormFieldError";
 import { FormSuccess } from "../forms/FormSuccess";
 import { FormError } from "../forms/FormError";
+import type { Team, TeamCreate } from "@/types";
 
 const schema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  parentTeam: yup.string(),
+  name: yup.string().required("Název je povinný"),
+  parentTeamId: yup.string(),
 });
 
-export const TeamAdd = (
-  {
-    /* teams */
-  }
-) => {
+interface TeamAddProps {
+  teams: Team[];
+  onSuccess?: () => void;
+}
+
+export const TeamAdd = ({ teams, onSuccess }: TeamAddProps) => {
   const [formError, setFormError] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -35,20 +36,36 @@ export const TeamAdd = (
     reset,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: yupResolver(schema) });
+  } = useForm<TeamCreate>({ resolver: yupResolver(schema) });
 
-  const onSubmit = handleSubmit((formData) => {
-    // Process formData as needed
-    console.log(formData);
-    setSuccess(true);
-    reset();
-    setTimeout(() => setSuccess(false), 2000);
+  const onSubmit = handleSubmit(async (formData) => {
+    try {
+      const response = await fetch("/api/teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Chyba při vytváření týmu");
+      }
+
+      setSuccess(true);
+      reset();
+      onSuccess?.();
+      setTimeout(() => setSuccess(false), 2000);
+    } catch (e) {
+      setFormError(true);
+      setTimeout(() => setFormError(false), 2000);
+    }
   });
 
   return (
     <Box>
       <Typography variant="h4" mb={3}>
-        Add Team
+        Přidat tým
       </Typography>
       <form onSubmit={onSubmit}>
         <Controller
@@ -56,39 +73,40 @@ export const TeamAdd = (
           defaultValue=""
           control={control}
           render={({ field }) => (
-            <TextField fullWidth {...field} label="Name" />
+            <TextField fullWidth {...field} label="Název" />
           )}
         />
 
         {errors.name && <FormFieldError text={errors.name.message} />}
 
         <FormControl fullWidth sx={{ mt: 3 }}>
-          <InputLabel>Parent team</InputLabel>
+          <InputLabel>Nadřazený tým</InputLabel>
           <Controller
-            name="parentTeam"
+            name="parentTeamId"
             defaultValue=""
             control={control}
             render={({ field }) => (
-              <Select {...field} label="Parent team">
-                {/*         {teams.map((team) => (
+              <Select {...field} label="Nadřazený tým">
+                <MenuItem value="">Žádný</MenuItem>
+                {teams.map((team) => (
                   <MenuItem key={team.id} value={team.id}>
                     {team.name}
                   </MenuItem>
-                ))} */}
+                ))}
               </Select>
             )}
           />
         </FormControl>
 
-        {errors.parentTeam && (
-          <FormFieldError text={errors.parentTeam.message} />
+        {errors.parentTeamId && (
+          <FormFieldError text={errors.parentTeamId.message} />
         )}
 
         <Button type="submit" variant="contained" sx={{ my: 3 }}>
-          Add Team
+          Přidat tým
         </Button>
-        {formError && <FormError text="Please fill out the form correctly" />}
-        {success && <FormSuccess text="Team Added" />}
+        {formError && <FormError text="Chyba při vytváření týmu" />}
+        {success && <FormSuccess text="Tým byl úspěšně vytvořen" />}
       </form>
     </Box>
   );

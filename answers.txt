@@ -1,0 +1,70 @@
+POUŽITÉ TECHNOLOGIE
+=================
+Backend:
+- FastAPI - moderní Python framework pro tvorbu REST API
+- SQLAlchemy - ORM pro práci s databází
+- Pydantic - validace dat a serializace
+- SQLite - databáze
+
+Frontend:
+- Next.js - React framework
+- Material-UI (MUI) - UI komponenty a styling
+- React Hook Form - správa formulářů
+- TypeScript - typová bezpečnost
+- React Query (doporučeno přidat) - správa stavů a cache
+
+POTŘEBNÉ ZMĚNY PRO SPRÁVNÉ FUNGOVÁNÍ
+==================================
+Backend:
+1. Implementace CRUD operací pro týmy a zaměstnance
+2. Přidání endpointu /api/teams/tree pro hierarchická data
+3. Implementace hromadného mazání zaměstnanců
+4. Správná validace dat (např. datum ukončení > datum nástupu)
+5. Ošetření kaskádového mazání (co se stane s podtýmy při smazání nadřazeného týmu)
+
+Frontend:
+1. Oprava cesty k API endpointu (/api/teams/tree místo /api/teams-tree)
+2. Přidání typů pro data (Team, Employee interfaces)
+3. Implementace komponent pro přidávání týmů a zaměstnanců
+4. Přidání podpory pro výběr a mazání zaměstnanců
+5. Správná validace formulářů
+
+MOŽNÁ VYLEPŠENÍ A PROBLEMATICKÁ MÍSTA
+===================================
+Bezpečnostní problémy:
+1. Chybí ošetření SQL injection v původním kódu (použití raw SQL queries)
+2. Chybí rate limiting pro API endpointy
+3. Chybí validace vstupních dat na backendu
+4. Chybí proper error handling a logování
+
+Výkonnostní problémy:
+1. Neefektivní načítání dat (vše najednou místo postupně)
+2. Chybí caching na frontendu
+3. Reload celé stránky po každé akci (window.location.reload())
+4. Možné problémy s velkým množstvím dat v hierarchické struktuře
+
+Uživatelská zkušenost:
+1. Chybí potvrzení před smazáním
+2. Chybí notifikace o úspěchu/neúspěchu operací
+3. Chybí loading stavy při akcích
+4. Chybí vyhledávání a filtrování
+5. Chybí možnost řazení
+
+Architektura a údržba:
+1. Typování pomocí 'any' na několika místech
+2. Chybí proper error boundary
+3. Chybí unit testy
+4. Chybí dokumentace API
+5. Chybí proper state management (např. React Query)
+
+Doporučená vylepšení:
+1. Přidat React Query pro lepší správu stavů a cache
+2. Implementovat proper error handling a notifikace
+3. Přidat optimistic updates místo page reloadu
+4. Implementovat lazy loading pro velké hierarchické struktury
+5. Přidat vyhledávání a filtrování
+6. Přidat testy
+7. Zlepšit typovou bezpečnost
+8. Přidat dokumentaci
+9. Implementovat proper autorizaci a RBAC
+10. Přidat monitoring a logování 
